@@ -1,0 +1,69 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  name             String
+  role             String          @default("STUDENT") // ADMIN, MENTOR, FACULTY, STUDENT
+  createdAt        DateTime        @default(now())
+  
+  studentProfile   StudentProfile? @relation("StudentUser")
+  mentoredStudents StudentProfile[] @relation("MentorUser")
+}
+
+model StudentProfile {
+  id                       String         @id @default(uuid())
+  studentCode              String         @unique
+  userId                   String         @unique
+  user                     User           @relation("StudentUser", fields: [userId], references: [id])
+  department               String
+  semester                 Int
+  mentorId                 String?
+  mentor                   User?          @relation("MentorUser", fields: [mentorId], references: [id])
+  
+  currentAttendance        Float
+  attendanceTrend          Float
+  internalMarks            Float
+  backlogs                 Int
+  assignmentCompletionRate Float
+  lmsActivityScore         Float
+  
+  riskScore                Float          @default(0.0)
+  riskCategory             String         @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  
+  riskLogs                 RiskLog[]
+  interventions            Intervention[]
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+}
+
+model RiskLog {
+  id           String         @id @default(uuid())
+  studentId    String
+  student      StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  riskScore    Float
+  riskCategory String         // LOW, MEDIUM, HIGH, CRITICAL
+  reasons      String         // Stored as JSON string in SQLite
+  createdAt    DateTime       @default(now())
+}
+
+model Intervention {
+  id             String         @id @default(uuid())
+  studentId      String
+  student        StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  actionTaken    String
+  category       String
+  notes          String?
+  status         String         @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+  riskBefore     Float
+  riskAfter      Float?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
