@@ -1,3 +1,5 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -73,4 +75,19 @@ def load_artifacts():
 
 if __name__ == "__main__":
     train_and_save_model()
-    
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+def home():
+    return {"status": "EduGuard AI Backend is Running!"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
